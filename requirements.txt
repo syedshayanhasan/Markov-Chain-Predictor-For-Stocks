@@ -5,3 +5,5 @@ yfinance>=0.2.40
 nselib>=0.1.0
 plotly>=5.23.0
 pandas_market_calendars
+matplotlib==3.5.3
+
