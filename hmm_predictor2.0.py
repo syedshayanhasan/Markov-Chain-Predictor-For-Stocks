@@ -573,14 +573,18 @@ if run:
         st.caption("Current momentum strength")
     
     # Transition Matrix
-    st.markdown("---")
-    st.markdown("#### 🔄 Transition Probability Matrix")
-    
-    trans_matrix = pd.DataFrame({
-        'To Uptrend': [trans_probs['up_to_up'] * 100, trans_probs['down_to_up'] * 100],
-        'To Downtrend': [trans_probs['up_to_down'] * 100, trans_probs['down_to_down'] * 100]
-    }, index=['From Uptrend', 'From Downtrend'])
-    
+    # Transition Matrix
+st.markdown("---")
+st.markdown("#### 🔄 Transition Probability Matrix")
+
+trans_matrix = pd.DataFrame({
+    'To Uptrend': [trans_probs['up_to_up'] * 100, trans_probs['down_to_up'] * 100],
+    'To Downtrend': [trans_probs['up_to_down'] * 100, trans_probs['down_to_down'] * 100]
+}, index=['From Uptrend', 'From Downtrend'])
+
+# Simple display without background_gradient
+st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
+
     styled_matrix = trans_matrix.style.background_gradient(cmap='RdYlGn', axis=None)\
         .format("{:.1f}%")\
         .set_properties(**{'text-align': 'center'})
@@ -1323,4 +1327,5 @@ else:
         - Past ≠ Future performance
         - Use with risk management
         - Combine with other analysis
+
         """)
