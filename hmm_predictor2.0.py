@@ -573,23 +573,16 @@ if run:
         st.caption("Current momentum strength")
     
     # Transition Matrix
-    # Transition Matrix
-st.markdown("---")
-st.markdown("#### 🔄 Transition Probability Matrix")
-
-trans_matrix = pd.DataFrame({
-    'To Uptrend': [trans_probs['up_to_up'] * 100, trans_probs['down_to_up'] * 100],
-    'To Downtrend': [trans_probs['up_to_down'] * 100, trans_probs['down_to_down'] * 100]
-}, index=['From Uptrend', 'From Downtrend'])
-
-# Simple display without background_gradient
-st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
-
-    styled_matrix = trans_matrix.style.background_gradient(cmap='RdYlGn', axis=None)\
-        .format("{:.1f}%")\
-        .set_properties(**{'text-align': 'center'})
+    st.markdown("---")
+    st.markdown("#### 🔄 Transition Probability Matrix")
     
-    st.dataframe(styled_matrix, use_container_width=True)
+    trans_matrix = pd.DataFrame({
+        'To Uptrend': [trans_probs['up_to_up'] * 100, trans_probs['down_to_up'] * 100],
+        'To Downtrend': [trans_probs['up_to_down'] * 100, trans_probs['down_to_down'] * 100]
+    }, index=['From Uptrend', 'From Downtrend'])
+    
+    # Display without styling
+    st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
     
     # Charts
     st.markdown("---")
@@ -706,10 +699,7 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
     
     st.plotly_chart(fig, use_container_width=True)
     
-    # -------------------------------------------------
     # STATE STATISTICS
-    # -------------------------------------------------
-    
     st.markdown("---")
     st.markdown("### 📊 State Statistics & Analysis")
     
@@ -746,14 +736,12 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
     with col2:
         st.markdown("#### Current Market State")
         
-        # Calculate state changes
         state_changes = (df["State"] != df["State"].shift()).sum()
         
         st.info(f"**Current State:** {current_state_name}")
         st.info(f"**State Changes:** {state_changes} in {len(df)} periods")
         st.info(f"**State Stability:** {((1 - state_changes/len(df)) * 100):.1f}%")
         
-        # Calculate average state duration
         state_durations = []
         current_duration = 1
         for i in range(1, len(df)):
@@ -767,7 +755,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         avg_duration = np.mean(state_durations) if state_durations else 0
         st.info(f"**Avg State Duration:** {avg_duration:.1f} periods")
         
-        # Current state duration
         current_state_duration = 1
         for i in range(len(df)-2, -1, -1):
             if df.iloc[i]["State"] == df.iloc[-1]["State"]:
@@ -776,20 +763,16 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
                 break
         st.info(f"**Current State Duration:** {current_state_duration} periods")
     
-    # -------------------------------------------------
     # PREDICTION SUMMARY
-    # -------------------------------------------------
-    
     st.markdown("---")
     st.markdown("### 🎯 Prediction Summary")
     
-    # Next period prediction
-    if current_state == 1:  # Currently in uptrend
+    if current_state == 1:
         prob_stay = trans_probs['up_to_up'] * 100
         prob_switch = trans_probs['up_to_down'] * 100
         next_likely = "Uptrend" if prob_stay > prob_switch else "Downtrend"
         next_prob = max(prob_stay, prob_switch)
-    else:  # Currently in downtrend
+    else:
         prob_stay = trans_probs['down_to_down'] * 100
         prob_switch = trans_probs['down_to_up'] * 100
         next_likely = "Downtrend" if prob_stay > prob_switch else "Uptrend"
@@ -889,31 +872,22 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         
         st.info(f"**{conf_signal}**\n\n{conf_desc}")
     
-    # -------------------------------------------------
     # RISK METRICS
-    # -------------------------------------------------
-    
     st.markdown("---")
     st.markdown("### ⚠️ Risk Metrics")
     
-    # Calculate risk metrics
     returns = df['Return'].dropna()
     
-    # Sharpe Ratio
     risk_free_rate = 0.06
     excess_returns = returns - (risk_free_rate / 252)
     sharpe = np.sqrt(252) * (excess_returns.mean() / returns.std()) if returns.std() != 0 else 0
     
-    # Max Drawdown
     cumulative = (1 + returns).cumprod()
     running_max = cumulative.expanding().max()
     drawdown = (cumulative - running_max) / running_max
     max_drawdown = drawdown.min() * 100
     
-    # Volatility
     volatility = returns.std() * np.sqrt(252) * 100
-    
-    # VaR
     var_95 = np.percentile(returns, 5) * 100
     
     col1, col2, col3, col4 = st.columns(4)
@@ -934,17 +908,13 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         st.metric("⚠️ VaR (95%)", f"{var_95:.2f}%")
         st.caption("Daily risk")
     
-    # -------------------------------------------------
-    # ADDITIONAL QUANTITATIVE METRICS
-    # -------------------------------------------------
-    
+    # ADVANCED METRICS
     st.markdown("---")
     st.markdown("### 📈 Advanced Quantitative Metrics")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Sortino Ratio
         downside_returns = returns[returns < 0]
         downside_std = downside_returns.std() if len(downside_returns) > 0 else returns.std()
         sortino = np.sqrt(252) * (excess_returns.mean() / downside_std) if downside_std != 0 else 0
@@ -952,14 +922,12 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         st.caption("Downside risk-adjusted")
     
     with col2:
-        # Calmar Ratio
         annual_return = returns.mean() * 252 * 100
         calmar = abs(annual_return / max_drawdown) if max_drawdown != 0 else 0
         st.metric("📊 Calmar Ratio", f"{calmar:.3f}")
         st.caption("Return/Max Drawdown")
     
     with col3:
-        # Win Rate
         positive_returns = len(returns[returns > 0])
         total_returns = len(returns)
         win_rate = (positive_returns / total_returns * 100) if total_returns > 0 else 0
@@ -967,18 +935,15 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         st.caption(f"{positive_returns}/{total_returns} periods")
     
     with col4:
-        # Profit Factor
         gains = returns[returns > 0].sum()
         losses = abs(returns[returns < 0].sum())
         profit_factor = gains / losses if losses != 0 else 0
         st.metric("💰 Profit Factor", f"{profit_factor:.2f}")
         st.caption("Gains/Losses ratio")
     
-    # Second row of metrics
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Skewness
         skewness = returns.skew()
         st.metric("📐 Skewness", f"{skewness:.3f}")
         if skewness > 0:
@@ -989,7 +954,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
             st.caption("⚪ Symmetric")
     
     with col2:
-        # Kurtosis
         kurtosis = returns.kurtosis()
         st.metric("📊 Kurtosis", f"{kurtosis:.3f}")
         if kurtosis > 3:
@@ -1000,14 +964,12 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
             st.caption("⚪ Normal dist.")
     
     with col3:
-        # Average Gain/Loss
         avg_gain = returns[returns > 0].mean() * 100 if len(returns[returns > 0]) > 0 else 0
         avg_loss = returns[returns < 0].mean() * 100 if len(returns[returns < 0]) > 0 else 0
         st.metric("📈 Avg Gain", f"{avg_gain:.3f}%")
         st.caption(f"Avg Loss: {avg_loss:.3f}%")
     
     with col4:
-        # Gain/Loss Ratio
         gain_loss_ratio = abs(avg_gain / avg_loss) if avg_loss != 0 else 0
         st.metric("⚖️ Gain/Loss Ratio", f"{gain_loss_ratio:.2f}")
         if gain_loss_ratio > 1:
@@ -1015,14 +977,10 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         else:
             st.caption("🔴 Losses > Gains")
     
-    # -------------------------------------------------
-    # STOCK PROFILE & SECTOR INFORMATION
-    # -------------------------------------------------
-    
+    # STOCK PROFILE
     st.markdown("---")
     st.markdown("### 🏢 Stock Profile & Sector Analysis")
     
-    # Fetch stock info
     try:
         ticker = yf.Ticker(symbol + ".NS")
         info = ticker.info
@@ -1042,10 +1000,9 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
             st.info(f"**Industry:** {industry}")
             
             if market_cap > 0:
-                market_cap_cr = market_cap / 10000000  # Convert to Crores
+                market_cap_cr = market_cap / 10000000
                 st.info(f"**Market Cap:** ₹{market_cap_cr:,.2f} Cr")
             
-            # Additional info
             country = info.get('country', 'N/A')
             website = info.get('website', 'N/A')
             employees = info.get('fullTimeEmployees', 'N/A')
@@ -1059,7 +1016,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         with col2:
             st.markdown("#### 💹 Key Financial Metrics")
             
-            # Price metrics
             current_price = info.get('currentPrice', df.iloc[-1]['Close'])
             previous_close = info.get('previousClose', 0)
             fifty_two_week_high = info.get('fiftyTwoWeekHigh', 0)
@@ -1075,12 +1031,10 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
                 st.caption(f"**52W High:** ₹{fifty_two_week_high:.2f}")
                 st.caption(f"**52W Low:** ₹{fifty_two_week_low:.2f}")
                 
-                # Calculate position in 52-week range
                 range_position = ((current_price - fifty_two_week_low) / 
                                 (fifty_two_week_high - fifty_two_week_low) * 100)
                 st.caption(f"**52W Range Position:** {range_position:.1f}%")
             
-            # Valuation metrics
             pe_ratio = info.get('trailingPE', None)
             pb_ratio = info.get('priceToBook', None)
             dividend_yield = info.get('dividendYield', None)
@@ -1092,7 +1046,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
             if dividend_yield:
                 st.caption(f"**Dividend Yield:** {dividend_yield*100:.2f}%")
         
-        # Sector comparison
         st.markdown("---")
         st.markdown("#### 🎯 Sector Analysis")
         
@@ -1102,7 +1055,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
             if sector != 'N/A':
                 st.info(f"**Primary Sector:** {sector}")
                 
-                # Provide sector context
                 sector_description = {
                     'Technology': '💻 IT services, software, and tech products',
                     'Financial Services': '🏦 Banking, insurance, and financial products',
@@ -1120,7 +1072,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
                 st.caption(sector_description.get(sector, 'Sector information'))
         
         with col2:
-            # Beta interpretation
             if beta_info:
                 beta_val = beta_info['beta']
                 st.info(f"**Beta:** {beta_val:.2f}")
@@ -1137,7 +1088,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
                     st.caption("🔵 Inverse market correlation")
         
         with col3:
-            # Volume analysis
             avg_volume = info.get('averageVolume', 0)
             current_volume = df.iloc[-1]['Volume']
             
@@ -1154,7 +1104,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
                 else:
                     st.caption("🔵 Below average volume")
         
-        # Business summary
         if 'longBusinessSummary' in info and info['longBusinessSummary']:
             with st.expander("📖 Business Summary"):
                 st.write(info['longBusinessSummary'])
@@ -1163,53 +1112,43 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         st.warning(f"⚠️ Could not fetch detailed stock information: {str(e)}")
         st.info("Continuing with available data...")
     
-    # -------------------------------------------------
     # KEY INSIGHTS
-    # -------------------------------------------------
-    
     st.markdown("---")
     st.markdown("### 💡 Key Insights")
     
     insights = []
     
-    # Insight 1: State prediction
     if next_prob > 70:
         insights.append(f"✅ **Strong prediction**: Next state likely to be {next_likely} with {next_prob:.1f}% probability")
     else:
         insights.append(f"⚠️ **Uncertain prediction**: Next state could be {next_likely} ({next_prob:.1f}%), but confidence is moderate")
     
-    # Insight 2: Model accuracy
     if brier_score and brier_score < 0.15:
         insights.append(f"✅ **Excellent model accuracy**: Brier score of {brier_score:.3f} indicates reliable predictions")
     elif brier_score and brier_score > 0.30:
         insights.append(f"⚠️ **Poor model accuracy**: Brier score of {brier_score:.3f} - use predictions with caution")
     
-    # Insight 3: State stability
     if prob_stay > 75:
         insights.append(f"✅ **Stable regime**: Current {current_state_name} state shows high persistence ({prob_stay:.1f}%)")
     elif prob_stay < 50:
         insights.append(f"⚠️ **Unstable regime**: Current state may change soon (only {prob_stay:.1f}% persistence)")
     
-    # Insight 4: Confidence
     if confidence_pct > 40:
         insights.append(f"✅ **Clear market direction**: High confidence ({confidence_pct:.1f}%) indicates strong trend")
     else:
         insights.append(f"⚠️ **Unclear direction**: Low confidence ({confidence_pct:.1f}%) suggests ranging market")
     
-    # Insight 5: Beta
     if beta_info:
         if beta_info['beta'] > 1.2:
             insights.append(f"⚠️ **High market sensitivity**: Beta of {beta_info['beta']:.2f} means stock amplifies market movements")
         elif beta_info['beta'] < 0.8:
             insights.append(f"✅ **Lower risk**: Beta of {beta_info['beta']:.2f} indicates less volatile than market")
     
-    # Insight 6: Risk metrics
     if sharpe > 1.5:
         insights.append(f"✅ **Excellent risk-adjusted returns**: Sharpe ratio of {sharpe:.2f} indicates strong performance")
     elif sharpe < 0.5:
         insights.append(f"⚠️ **Poor risk-adjusted returns**: Sharpe ratio of {sharpe:.2f} suggests underperformance")
     
-    # Insight 7: Win rate
     if win_rate > 60:
         insights.append(f"✅ **High win rate**: {win_rate:.1f}% of periods showed positive returns")
     elif win_rate < 40:
@@ -1218,10 +1157,7 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
     for insight in insights:
         st.markdown(insight)
     
-    # -------------------------------------------------
-    # METHODOLOGY COMPARISON
-    # -------------------------------------------------
-    
+    # METHODOLOGY
     st.markdown("---")
     st.markdown("### 📚 Methodology: Markov Chain vs HMM")
     
@@ -1252,7 +1188,6 @@ st.dataframe(trans_matrix.round(1).astype(str) + '%', use_container_width=True)
         - Provides transition matrix for regime analysis
         """)
     
-    # Footer
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: #666; padding: 20px;'>
@@ -1327,5 +1262,4 @@ else:
         - Past ≠ Future performance
         - Use with risk management
         - Combine with other analysis
-
         """)
